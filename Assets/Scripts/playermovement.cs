@@ -5,76 +5,92 @@ using UnityEngine;
 public class playermovement : MonoBehaviour
 {
    [Header("Movement")]
-   public float forwardspeed=5f;
-   public float horizontalspeed=5f;
-   public float xlimit=2.5f;
+   public float forwardSpeed = 8f;
+    public float horizontalSpeed = 0.02f;
+    public float xLimit = 2.5f;
+    public float smoothness = 10f;
 
+    private Vector3 targetPosition;
+    private Vector3 startTouchPos;
 
-   private Vector3 starttouchpos;
-   private bool isDragging;
-
+    private bool isDragging;
+    private bool gameStarted;
 
     void Start()
     {
-        
+        targetPosition = transform.position;
     }
 
-   
     void Update()
     {
-        Moveforward();
-        HandleSwipe();
-    }
+        HandleInput();
 
-
-    void Moveforward()
-    {
-        transform.Translate(Vector3.forward*forwardspeed*Time.deltaTime);
-    }
-
-    void HandleSwipe()
-{
-    if (Input.GetMouseButtonDown(0))
-    {
-        starttouchpos = Input.mousePosition;
-        isDragging = true;
-    }
-    else if (Input.GetMouseButtonUp(0))
-    {
-        isDragging = false;
-    }
-
-    if (isDragging)
-    {
-        float deltaX = Input.mousePosition.x - starttouchpos.x;
-        MoveHorizontal(deltaX);
-        starttouchpos = Input.mousePosition;
-    }
-    if (Input.touchCount > 0)
-    {
-        Touch touch = Input.GetTouch(0);
-
-        if (touch.phase == TouchPhase.Began)
+        if (gameStarted)
         {
-            starttouchpos = touch.position;
+            MoveForward();
         }
-        else if (touch.phase == TouchPhase.Moved)
+
+        SmoothMove();
+    }
+    void MoveForward()
+    {
+        targetPosition.z += forwardSpeed * Time.deltaTime;
+    }
+
+    void HandleInput()
+    {
+        if (Input.GetMouseButtonDown(0))
         {
-            float deltaX = touch.position.x - starttouchpos.x;
+            StartGame();
+            startTouchPos = Input.mousePosition;
+            isDragging = true;
+        }
+        else if (Input.GetMouseButtonUp(0))
+        {
+            isDragging = false;
+        }
+
+        if (isDragging)
+        {
+            float deltaX = Input.mousePosition.x - startTouchPos.x;
             MoveHorizontal(deltaX);
-            starttouchpos = touch.position;
+            startTouchPos = Input.mousePosition;
+        }
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+
+            if (touch.phase == TouchPhase.Began)
+            {
+                StartGame();
+                startTouchPos = touch.position;
+            }
+            else if (touch.phase == TouchPhase.Moved)
+            {
+                float deltaX = touch.position.x - startTouchPos.x;
+                MoveHorizontal(deltaX);
+                startTouchPos = touch.position;
+            }
         }
     }
-
-
-void MoveHorizontal(float deltaX)
-{
-    float moveX = deltaX * horizontalspeed * Time.deltaTime;
-
-    Vector3 newPos = transform.position;
-    newPos.x += moveX;
-    newPos.x = Mathf.Clamp(newPos.x, -xlimit, xlimit);
-    transform.position = newPos;
-}
-}
+    void MoveHorizontal(float deltaX)
+    {
+        targetPosition.x += deltaX * horizontalSpeed;
+        targetPosition.x = Mathf.Clamp(targetPosition.x, -xLimit, xLimit);
+    }
+    void SmoothMove()
+    {
+        transform.position = Vector3.Lerp(
+            transform.position,
+            targetPosition,
+            smoothness * Time.deltaTime
+        );
+    }
+    void StartGame()
+    {
+        if (!gameStarted)
+        {
+            gameStarted = true;
+        }
+    }
 }
