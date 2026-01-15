@@ -8,7 +8,7 @@ public class playernumber : MonoBehaviour
     public int number = 1;
     public TMP_Text numberText;
 
-    public GameObject tailPrefab;
+    public GameObject tailPrefab,failpanel,completepanel;
     public float followDistance = 0.6f;
     public float followSpeed = 8f;
 
@@ -44,9 +44,9 @@ public class playernumber : MonoBehaviour
 {
     Debug.Log("GAME OVER");
 
-    GetComponent<playermovement>().enabled = false;
-
-    
+  playermovement move = GetComponent<playermovement>();
+    if (move != null)
+    move.enabled = false;
     foreach (var seg in activeTail)
     {
         seg.Disable();
@@ -54,7 +54,7 @@ public class playernumber : MonoBehaviour
     }
     activeTail.Clear();
     GetComponent<Collider>().enabled = false;
-    GameManager.instance.failpanel.SetActive(true);
+    failpanel.SetActive(true);
 }
 
     void UpdatePlayerUI()
@@ -113,4 +113,22 @@ public class playernumber : MonoBehaviour
             prevPos = activeTail[i].transform.position;
         }
     }
+
+    public void FinishGame()
+{
+    playermovement move = GetComponent<playermovement>();
+    if (move != null)
+        move.enabled = false;
+    Collider col = GetComponent<Collider>();
+    if (col != null)
+        col.enabled = false;
+    foreach (var seg in activeTail)
+    {
+        if (seg != null)
+            seg.Disable();
+    }
+    activeTail.Clear();
+    completepanel.SetActive(true);
+    
+}
 }
