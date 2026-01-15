@@ -22,7 +22,7 @@ public class pickupnumber : MonoBehaviour
         playernumber player =other.GetComponent<playernumber>();
         if(player!=null)
         {
-            player.updatenumber(value);
+            player.UpdateNumber(value);
             Debug.Log("Player number updated to: " + player.number);
             Destroy(gameObject);
         }
