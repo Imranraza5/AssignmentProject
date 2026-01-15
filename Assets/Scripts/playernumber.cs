@@ -5,19 +5,20 @@ using TMPro;
 
 public class playernumber : MonoBehaviour
 {
-     public int number = 1;
+    public int number = 1;
     public TMP_Text numberText;
 
     public GameObject tailPrefab;
     public float followDistance = 0.6f;
     public float followSpeed = 8f;
 
-    private List<tailsegment> tail = new List<tailsegment>();
+    private List<tailsegment> activeTail = new List<tailsegment>();
+    private Queue<tailsegment> pool = new Queue<tailsegment>();
 
     void Start()
     {
         UpdatePlayerUI();
-        RebuildTail();
+        BuildTail();
     }
 
     void Update()
@@ -31,7 +32,7 @@ public class playernumber : MonoBehaviour
         if (number < 1) number = 1;
 
         UpdatePlayerUI();
-        RebuildTail();
+        BuildTail();
     }
 
     void UpdatePlayerUI()
@@ -39,36 +40,55 @@ public class playernumber : MonoBehaviour
         numberText.text = number.ToString();
     }
 
-    // 🔥 CORE LOGIC
-    void RebuildTail()
+   void BuildTail()
+{
+    int required = number - 1;
+
+    if (required < 0) required = 0;
+
+    // REMOVE from BACK
+    while (activeTail.Count > required)
     {
-        // remove old tail
-        foreach (var seg in tail)
-            Destroy(seg.gameObject);
+        tailsegment seg = activeTail[activeTail.Count - 1];
+        activeTail.RemoveAt(activeTail.Count - 1);
+        seg.Disable();
+        pool.Enqueue(seg);
+    }
 
-        tail.Clear();
+    // ADD if needed
+    while (activeTail.Count < required)
+    {
+        tailsegment seg = GetFromPool();
+        activeTail.Add(seg);
+    }
 
-        // build new tail: number-1 → 1
-        for (int i = number - 1; i >= 1; i--)
-        {
-            GameObject obj = Instantiate(tailPrefab, transform.position, Quaternion.identity);
-            tailsegment seg = obj.GetComponent<tailsegment>();
-            seg.SetValue(i);
-            tail.Add(seg);
-        }
+    // UPDATE values (top-down)
+    for (int i = 0; i < activeTail.Count; i++)
+    {
+        activeTail[i].Setup(number - (i + 1));
+    }
+}
+
+    tailsegment GetFromPool()
+    {
+        if (pool.Count > 0)
+            return pool.Dequeue();
+
+        GameObject obj = Instantiate(tailPrefab);
+        return obj.GetComponent<tailsegment>();
     }
 
     void MoveTail()
     {
         Vector3 prevPos = transform.position;
 
-        for (int i = 0; i < tail.Count; i++)
+        for (int i = 0; i < activeTail.Count; i++)
         {
             Vector3 targetPos = prevPos - transform.forward * followDistance;
-            tail[i].transform.position =
-                Vector3.Lerp(tail[i].transform.position, targetPos, Time.deltaTime * followSpeed);
+            activeTail[i].transform.position =
+                Vector3.Lerp(activeTail[i].transform.position, targetPos, Time.deltaTime * followSpeed);
 
-            prevPos = tail[i].transform.position;
+            prevPos = activeTail[i].transform.position;
         }
     }
 }
